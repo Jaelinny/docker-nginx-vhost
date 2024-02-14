@@ -185,7 +185,7 @@ $ curl http://localhost:8001
 <h1>A</h1>
 ```
 
-## 출력 화면 <🔄f5>
+## 출력 화면 <🔄F5>
 ![image](https://github.com/Jaelinny/docker-nginx-vhost/assets/148875683/e2d4ae4e-bfd7-4ebc-981c-3d02b9e57ace)
 
 
