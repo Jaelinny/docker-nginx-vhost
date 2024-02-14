@@ -1,7 +1,2 @@
 FROM nginx
-COPY index.html /usr/share/nginx/htm 
-
-
-
-
-l
+COPY index.html /usr/share/nginx/html
