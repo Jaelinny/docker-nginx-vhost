@@ -4,6 +4,9 @@
 
 # load-balancing
 - https://www.nginx.com/resources/glossary/load-balancing/
+  
+![image](https://github.com/Jaelinny/docker-nginx-vhost/assets/148875683/f1013b3f-9a5f-4de5-85d6-518347e8c230)
+
 
 <br/>
 <br/>
