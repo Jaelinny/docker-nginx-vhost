@@ -5,7 +5,8 @@
 # load-balancing
 - https://www.nginx.com/resources/glossary/load-balancing/
 
-
+<br/>
+<br/>
 
 # Dockerfile
 
@@ -183,8 +184,11 @@ $ curl http://localhost:8001
 
 ## 출력 화면
 - http://localhost:8001/
-![image](https://github.com/Jaelinny/docker-nginx-vhost/assets/148875683/9020a5a5-3540-463e-b8b7-82883c340e67)
+  <br/>
+![image](https://github.com/Jaelinny/docker-nginx-vhost/assets/148875683/e2d4ae4e-bfd7-4ebc-981c-3d02b9e57ace)
 
-## 🔄f5
+### 🔄f5
 - http://localhost:8001/
-![image](https://github.com/Jaelinny/docker-nginx-vhost/assets/148875683/b8ccfbe1-1ca5-428e-b495-6943129e1e4a)
+  <br/>
+![image](https://github.com/Jaelinny/docker-nginx-vhost/assets/148875683/662d4aac-e0d9-4555-a586-fdf88bb7a9a4)
+
