@@ -3,58 +3,115 @@
 ![image](https://github.com/pySatellite/docker-nginx-vhost/assets/87309910/878eaf6a-18bc-4467-8b3f-5086de8ff3a1)
 
 # load-balancing
-https://www.nginx.com/resources/glossary/load-balancing/
+- https://www.nginx.com/resources/glossary/load-balancing/
 
-# hello Dockerfile
 
-## A. serv-a/serv-b/lb 각각 Dockerfile 을 생성
+
+# Dockerfile
+
+## 1. serv-a/serv-b/lb Dockerfile 생성
 ```
 $ pwd
-/home/nori/code/docker-nginx-vhost/serv-b
-$ vi Dockerfile
+/home/nori/code/docker-nginx-vhost
+
+$ cd ../serv-a, serv-b
+$ cat Dockerfile
 FROM nginx
 COPY index.html /usr/share/nginx/html
 
-$ pwd
-/home/nori/code/docker-nginx-vhost/serv-a
-$ vi Dockerfile
+$ cd lb
+$ cat Dockerfile
 FROM nginx
-COPY index.html /usr/share/nginx/html
-
-$ pwd
-/home/nori/code/docker-nginx-vhost/lb
-$ vi Dockerfile
-FROM nginx
-COPY index.html /usr/share/nginx/html
+COPY config/default.conf /etc/nginx/conf.d/
 ```
 
-## B~C. Build & RUN
+## 2. lb/config/default.conf 코드 수정
 ```
-$ sudo docker build -t n-s-1:0.1.0 .
-$ sudo docker build -t n-s-2:0.1.0 .
-$ sudo docker build -t n-s-3:0.1.0 .
+upstream serv {
+        server n1-1:80;
+        server n1-2:80;
+}
+server {
+        listen 80;
+
+        location /
+        {
+                proxy_pass http://serv;
+        }
+}
+```
+
+## 3. Build & RUN
+
+### step 1
+- docker rm * rmi
+```
+$ sudo docker images
+REPOSITORY   TAG       IMAGE ID   CREATED   SIZE
+$ sudo docker ps -a
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+```
+
+### step 2
+```
+$ docker run -itd -p 8002:80 --name serv-a nginx
+$ docker run -itd -p 8003:80 --name serv-b nginx
+$ docker run -itd -p 8001:80 --name lb nginx:latest
+
+$ sudo docker ps
+CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS          PORTS                                   NAMES
+34fd7fbc0ba1   nginx:latest   "/docker-entrypoint.…"   16 seconds ago   Up 15 seconds   0.0.0.0:8001->80/tcp, :::8001->80/tcp   lb
+efbdd20605f0   nginx          "/docker-entrypoint.…"   25 seconds ago   Up 24 seconds   0.0.0.0:8003->80/tcp, :::8003->80/tcp   serv-b
+4d25a85c1c16   nginx          "/docker-entrypoint.…"   34 seconds ago   Up 33 seconds   0.0.0.0:8002->80/tcp, :::8002->80/tcp   serv-a
+```
+
+### step 1,2 by Dockerfile
+- build & push
+```
+$ tree
+.
+├── README.md
+├── lb
+│   ├── Dockerfile
+│   └── config
+│       └── default.conf
+├── serv-a
+│   ├── Dockerfile
+│   └── index.html
+└── serv-b
+    ├── Dockerfile
+    └── index.html
+
+$ cd lb
+$ sudo docker build -t taengguu/lb:0.1.0 .
+$ sudo docker push taengguu/lb:0.1.0
+
+$ cd ../serv-a
+$ sudo docker build -t taengguu/serv-a:0.1.0 .
+$ sudo docker push taengguu/serv-a:0.1.0
+
+$ cd ../serv-b
+$ sudo docker build -t taengguu/serv-b:0.1.0 .
+$ sudo docker push taengguu/serv-b:0.1.0
+```
+
+### step 3 
+- run
+- lb-net 네트워크에 모두 묶기
+```
+$ sudo docker network create -d bridge lb-net
 
 $ sudo docker images
-REPOSITORY        TAG       IMAGE ID       CREATED             SIZE
-n-s-3             0.1.0     fb0f0a51c3da   16 minutes ago      187MB
-n-s-2             0.1.0     f329679ae831   40 minutes ago      187MB
-n-s-1             0.1.0     9c1976011eea   43 minutes ago      187MB
+$ sudo docker run -d --name serv-a --network lb-net taengguu/serv-a:0.1.0
+$ sudo docker run -d --name serv-b --network lb-net taengguu/serv-b:0.1.0
+$ sudo docker run -d -p 8001:80 --name lb --network lb-net taengguu/lb:0.1.0
 
-$ sudo docker run -d --name s1-1 -p 9001:80 n-s-1:0.1.0
-$ sudo docker run -d -p 9002:80 n-s-2:0.1.0
-$ sudo docker run -d -p 9003:80 n-s-3:0.1.0
-```
-
-## D. 네트워크 생성하여 serv-a, serv-b, lb 를 묶기
-```
-$ sudo docker network create docker-build  // 네트워크 생성
-
-$  docker network inspect docker-build
+$ docker network inspect lb-net
 [
     {
-        "Name": "docker-build",
-        "Id": "ffd8d4bed5551a210152a134456ae481acac6da9131a8e4cfbe8efbb9670fa00",
-        "Created": "2024-02-13T16:51:40.524975693+09:00",
+        "Name": "lb-net",
+        "Id": "440f5937e12798a7e82993af754bcb8ab11fe65d7b7df9e8493dce6aa5d17937",
+        "Created": "2024-02-15T01:12:21.015312758+09:00",
         "Scope": "local",
         "Driver": "bridge",
         "EnableIPv6": false,
@@ -63,46 +120,8 @@ $  docker network inspect docker-build
             "Options": {},
             "Config": [
                 {
-                    "Subnet": "172.19.0.0/16",
-                    "Gateway": "172.19.0.1"
-                }
-            ]
-        },
-        "Internal": false,
-        "Attachable": false,
-        "Ingress": false,
-        "ConfigFrom": {
-            "Network": ""
-        },
-        "ConfigOnly": false,
-        "Containers": {},
-        "Options": {},
-        "Labels": {}
-    }
-]
-
-// 생성 된 docker-build 네트워크에 serv-a, serv-b, lb 묶기!
-$ sudo docker network connect docker-build serv-a
-$ sudo docker network connect docker-build serv-b
-$ sudo docker network connect docker-build lb
-
-$ sudo docker inspect docker-build
-
-[
-    {
-        "Name": "docker-build",
-        "Id": "ffd8d4bed5551a210152a134456ae481acac6da9131a8e4cfbe8efbb9670fa00",
-        "Created": "2024-02-13T16:51:40.524975693+09:00",
-        "Scope": "local",
-        "Driver": "bridge",
-        "EnableIPv6": false,
-        "IPAM": {
-            "Driver": "default",
-            "Options": {},
-            "Config": [
-                {
-                    "Subnet": "172.19.0.0/16",
-                    "Gateway": "172.19.0.1"
+                    "Subnet": "172.18.0.0/16",
+                    "Gateway": "172.18.0.1"
                 }
             ]
         },
@@ -114,25 +133,25 @@ $ sudo docker inspect docker-build
         },
         "ConfigOnly": false,
         "Containers": {
-            "510e9fc8cb026d95307540345d303201f588aec3dcd658a6c92823e48dddea0f": {
+            "0ce4371ccab6b420adb06c2f89aa879f77a291815329d0ee3e0c663e8c0ff874": {
                 "Name": "serv-b",
-                "EndpointID": "76fbc533acabc13bbf69920b704324c251a7d947c60a374087bba58aad2e637c",
-                "MacAddress": "02:42:ac:13:00:03",
-                "IPv4Address": "172.19.0.3/16",
+                "EndpointID": "0eaa2447cf45a9fca4fe8be7ad7f3ee6a3f3ffe67a7dacecf2659d6cadae0dbd",
+                "MacAddress": "02:42:ac:12:00:03",
+                "IPv4Address": "172.18.0.3/16",
                 "IPv6Address": ""
             },
-            "6454337e4a48a6ac5f1d6d69e047ab7de0c20e0274c3f8bb8c4ab73d4cb41822": {
-                "Name": "serv-a",
-                "EndpointID": "b8eff8a444aa72840a21c562c915b1d7eb19f223d35ee46f55c919e8dfc8eff9",
-                "MacAddress": "02:42:ac:13:00:02",
-                "IPv4Address": "172.19.0.2/16",
-                "IPv6Address": ""
-            },
-            "8c43dcb29c58dc1e6be39137c094e3fc914b6ab7b4c183120e7a691e3ddcb4cf": {
+            "c5a1a6ac44b4cb3ccd1780e8195efff4e98015b50b8a9ad6671961d975d45016": {
                 "Name": "lb",
-                "EndpointID": "2d2a380c9d73e948b7af53811b43d7b234a9cf882d6610f5153643654c9cad09",
-                "MacAddress": "02:42:ac:13:00:04",
-                "IPv4Address": "172.19.0.4/16",
+                "EndpointID": "93ecd256f3a3ba24505aff6d915e9bc0b4f93667ac824901ef830798a6c74670",
+                "MacAddress": "02:42:ac:12:00:04",
+                "IPv4Address": "172.18.0.4/16",
+                "IPv6Address": ""
+            },
+            "d44b3688c8ccf7b3938f86c37c236acf214b9fae20dfd4ccdbcf51c6d580287f": {
+                "Name": "serv-a",
+                "EndpointID": "8af5a14c9f0db020ef28071a1041f19ed7f89ae25613eb4d1630c628d2d67702",
+                "MacAddress": "02:42:ac:12:00:02",
+                "IPv4Address": "172.18.0.2/16",
                 "IPv6Address": ""
             }
         },
@@ -142,10 +161,31 @@ $ sudo docker inspect docker-build
 ]
 ```
 
-## E. 잘 동작하는지 확인 및 README.md 에 설명 작성
+## 4. 테스트
 
+- test 1
+```
+$ sudo docker ps
+CONTAINER ID   IMAGE                   COMMAND                  CREATED          STATUS          PORTS                                   NAMES
+1d50274416dd   taengguu/lb:0.1.0       "/docker-entrypoint.…"   6 seconds ago    Up 5 seconds    0.0.0.0:8001->80/tcp, :::8001->80/tcp   lb
+9eb365f17ac2   taengguu/serv-b:0.1.0   "/docker-entrypoint.…"   30 seconds ago   Up 29 seconds   80/tcp                                  serv-b
+bef7ae198520   taengguu/serv-a:0.1.0   "/docker-entrypoint.…"   52 seconds ago   Up 51 seconds   80/tcp                                  serv-a
+```
 
-- ![image](https://github.com/Jaelinny/docker-nginx-vhost/assets/148875683/ab2c0540-56b1-48d3-a1cd-f851d6558cce)
+- test 2
+```
+$ curl http://localhost:8001
+<h1>A</h1>
+$ curl http://localhost:8001
+<h1>B</h1>
+$ curl http://localhost:8001
+<h1>A</h1>
+```
 
+## 출력 화면
+- http://localhost:8001/
+![image](https://github.com/Jaelinny/docker-nginx-vhost/assets/148875683/9020a5a5-3540-463e-b8b7-82883c340e67)
 
-
+## 🔄f5
+- http://localhost:8001/
+![image](https://github.com/Jaelinny/docker-nginx-vhost/assets/148875683/b8ccfbe1-1ca5-428e-b495-6943129e1e4a)
