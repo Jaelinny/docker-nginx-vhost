@@ -16,7 +16,7 @@
 ## 1. serv-a/serv-b/lb Dockerfile 생성
 ```
 $ pwd
-/home/nori/code/docker-nginx-vhost
+/home/jelly/code/docker-nginx-vhost
 
 $ cd ../serv-a, serv-b
 $ cat Dockerfile
