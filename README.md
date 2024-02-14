@@ -96,8 +96,7 @@ $ sudo docker push taengguu/serv-b:0.1.0
 ```
 
 ### step 3 
-- run
-- lb-net 네트워크에 모두 묶기
+- run & lb-net 네트워크에 모두 묶기
 ```
 $ sudo docker network create -d bridge lb-net
 
