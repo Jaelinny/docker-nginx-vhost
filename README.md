@@ -32,8 +32,8 @@ COPY config/default.conf /etc/nginx/conf.d/
 ## 2. lb/config/default.conf 코드 수정
 ```
 upstream serv {
-        server n1-1:80;
-        server n1-2:80;
+        server serv-a:80;
+        server serv-b:80;
 }
 server {
         listen 80;
